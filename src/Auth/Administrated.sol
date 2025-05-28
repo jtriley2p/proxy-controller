@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.30;
 
-/// @title Single Authorization
+/// @title Administrated Contract
 /// @author jtriley2p
-/// @notice Simple, single authorized address contract. Transition requires two steps; current admin
-///         sends authorization to new admin, new admin accepts authorization. This requires the new
-///         admin be capable of calling this contract before transition, preventing bricking.
-abstract contract SingleAuth {
-    /// @notice Logged on admin authority send.
+/// @notice Simple, single authorized address abstract contract. Transition requires two steps;
+///         current admin sends authorization to new admin, new admin accepts authorization. This
+///         requires the new be capable of calling this contract before transition, preventing
+///         bricking.
+abstract contract Administrated {
+    /// @notice Logged when admin authority is sent.
     /// @param newAdmin New admin address.
     event SendAdmin(address indexed newAdmin);
 
-    /// @notice Logged on admin authority acceptance.
+    /// @notice Logged when admin authority is received.
     event ReceiveAdmin();
 
     /// @notice Current admin address.
     address public admin;
 
-    /// @notice Pending admin address (non-zero only between sending and receiving admin).
+    /// @notice Pending admin address
+    /// @dev Address is non-zero only between sending and receiving admin.
     address public pendingAdmin;
 
     /// @notice Sends admin authority.

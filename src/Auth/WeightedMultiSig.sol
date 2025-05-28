@@ -9,7 +9,7 @@ struct Authorization {
     bytes32 vs;
 }
 
-/// @title Multiple Authorization Contract.
+/// @title Weighted Multiple Signature Contract
 /// @author jtriley2p
 /// @notice Manages authorization "weight" associated with each address. This creates a flexible
 ///         multi-signature scheme where a single address authorization, multiple equally-weighted
@@ -18,7 +18,7 @@ struct Authorization {
 /// @dev 1-of-1 Auth: admin weight is 1 and threshold is 1.
 /// @dev M-of-N Auth: admin weight of each is 1 and threshold is N.
 /// @dev M-of-N Weighted Auth: admin weight of each is variable and threshold is N.
-contract MultiAuth {
+contract WeightedMultiSig {
     /// @notice Logged when weight is set.
     /// @param admin Address whose weight is set.
     /// @param weight Weight assigned to admin.

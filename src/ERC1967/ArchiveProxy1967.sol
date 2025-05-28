@@ -3,9 +3,9 @@ pragma solidity 0.8.30;
 
 bytes32 constant implSlot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 bytes32 constant adminSlot = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-bytes32 constant archiveSlot = 0xe5f5ff9e6908d8581103b80a34691dc6a53470d9a72154fc88f990b1e08ad7bc;
+bytes32 constant archiveSlot = 0x6d0a4a697ff0ac6a742f5fd4ef4635463f282c015f1b33be5ff5077e69199088;
 
-/// @title ArchiveProxy1967
+/// @title ERC-1967 Proxy with Implementation Archive
 /// @author jtriley2p
 /// @notice Proxy contract implementing the ERC-1967 storage layout standard with an archive of
 ///         previous implementations.
@@ -63,7 +63,7 @@ contract ArchiveProxy1967 {
 
     /// @notice Rolls back implementation to its previous state.
     /// @dev If there are no previous implementations, implementation is set to zero.
-    function rollback() public {
+    function rollBack() public {
         require(msg.sender == admin());
 
         address[] storage archive = getArchive();
@@ -98,6 +98,7 @@ contract ArchiveProxy1967 {
     }
 
     /// @notice Returns a storage pointer to the implementations archive.
+    /// @dev Slot is keccak256("proxy.archive") - 1
     function getArchive() internal pure returns (address[] storage archive) {
         assembly {
             archive.slot := archiveSlot

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.30;
 
-import {SingleAuth} from "src/Auth/SingleAuth.sol";
+import {Administrated} from "src/Auth/Administrated.sol";
 import {ArchiveProxy1967} from "src/ERC1967/ArchiveProxy1967.sol";
 
 // Proxy-Implementation Pair Structure
@@ -32,14 +32,14 @@ struct Deployment {
     ProxyPair[] proxyImpls;
 }
 
-/// @title Proxy Monitor
+/// @title Proxy Controller Contract
 /// @author jtriley2p
 /// @notice Deploys and upgrades proxies with a timelock-able queue. Deployments may be queued,
 ///         cancelled, executed, and/or rolled back.
 /// @dev Deployments may only be cancelled if they are queued, but not deployed.
 /// @dev Deployments may only be deployed if they are queued and the timelock as passed.
 /// @dev Rollbacks move to the last successfully executed deployment.
-contract ProxyMon is SingleAuth {
+contract ProxyController is Administrated {
     /// @notice Logged on status update.
     /// @param index Deployment index.
     /// @param status New deployment status.
@@ -117,7 +117,7 @@ contract ProxyMon is SingleAuth {
         require(msg.sender == admin);
 
         for (uint256 i; i < lastDeployment.proxyImpls.length; i++) {
-            lastDeployment.proxyImpls[i].proxy.rollback();
+            lastDeployment.proxyImpls[i].proxy.rollBack();
         }
 
         lastDeployment.status = Status.RolledBack;

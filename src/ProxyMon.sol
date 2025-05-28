@@ -2,14 +2,14 @@
 pragma solidity 0.8.30;
 
 import {SingleAuth} from "src/Auth/SingleAuth.sol";
-import {Proxy1967} from "src/ERC1967/Proxy1967.sol";
+import {ArchiveProxy1967} from "src/ERC1967/ArchiveProxy1967.sol";
 
 // Proxy-Implementation Pair Structure
 struct ProxyPair {
     // ERC1967 Proxy
-    Proxy1967 proxy;
+    ArchiveProxy1967 proxy;
     // Implementation Address
-    address Impl;
+    address impl;
 }
 
 // Deployment Status
@@ -30,8 +30,6 @@ struct Deployment {
     bytes32[] proxySalts;
     // Proxy implementation pairs.
     ProxyPair[] proxyImpls;
-    // Proxy state diffs (set at deployment).
-    ProxyPair[] proxyImplsDiffs;
 }
 
 /// @title Proxy Monitor
@@ -48,7 +46,7 @@ contract ProxyMon is SingleAuth {
     event StatusUpdate(uint256 indexed index, Status status);
 
     /// @notice Most recent deployment index.
-    uint256 deploymentIndex;
+    uint256 lastDeploymentIndex;
 
     /// @notice Historical deployments array; facilitates rollbacks.
     Deployment[] public deployments;
@@ -58,30 +56,29 @@ contract ProxyMon is SingleAuth {
     /// @param proxySalts Salts for create2 proxy deployments.
     /// @param proxyImpls Pairs of addresses representing the proxy and respective implementation.
     function queue(uint64 timelock, bytes32[] calldata proxySalts, ProxyPair[] calldata proxyImpls) public {
-        require(msg.sender == admin);
+        uint256 index = deployments.length - 1;
 
-        require(deploymentIndex == deployments.length - 1);
+        require(msg.sender == admin);
+        require(deployments[index].status != Status.Queued);
 
         deployments.push(
             Deployment(
-                Status.Queued, uint64(block.timestamp + timelock), proxySalts, proxyImpls, new ProxyPair[](0)
+                Status.Queued, uint64(block.timestamp + timelock), proxySalts, proxyImpls
             )
         );
 
-        emit StatusUpdate(deployments.length - 1, Status.Queued);
+        emit StatusUpdate(index, Status.Queued);
     }
 
     /// @notice Cancels a deployment. The most recent deployment MUST have the queue status.
     function cancel() public {
-        require(msg.sender == admin);
-
-        uint256 index = deploymentIndex;
+        uint256 index = deployments.length - 1;
         Deployment storage deployment = deployments[index];
 
+        require(msg.sender == admin);
         require(deployment.status == Status.Queued);
 
         deployment.status = Status.Cancelled;
-        deploymentIndex = index + 1;
 
         emit StatusUpdate(index, Status.Cancelled);
     }
@@ -90,32 +87,27 @@ contract ProxyMon is SingleAuth {
     /// @notice Deployment must be queued and timelock must have passed.
     /// @notice Iterates proxy deployments (via proxySalts), iterates proxy upgrades, then updates
     ///         deployment status and increments the deployment index.
-    /// @dev `proxyImplDiffs` stores the implementation address before upgrading for rollbacks.
     function deploy() public {
-        require(msg.sender == admin);
-
-        uint256 index = deploymentIndex;
+        uint256 index = deployments.length - 1;
         Deployment storage deployment = deployments[index];
 
+        require(msg.sender == admin);
         require(deployment.status == Status.Queued);
         require(deployment.readyAt <= block.timestamp);
 
         for (uint256 i; i < deployment.proxySalts.length; i++) {
-            new Proxy1967{salt: deployment.proxySalts[i]}();
+            new ArchiveProxy1967{salt: deployment.proxySalts[i]}();
         }
 
         for (uint256 i; i < deployment.proxyImpls.length; i++) {
-            Proxy1967 proxy = deployment.proxyImpls[i].proxy;
-            address Impl = deployment.proxyImpls[i].Impl;
-            address lastImpl = proxy.implementation();
+            ArchiveProxy1967 proxy = deployment.proxyImpls[i].proxy;
+            address impl = deployment.proxyImpls[i].impl;
 
-            proxy.upgrade(Impl);
-
-            deployment.proxyImplsDiffs[i] = ProxyPair(proxy, lastImpl);
+            proxy.upgrade(impl);
         }
 
         deployment.status = Status.Deployed;
-        deploymentIndex = index + 1;
+        lastDeploymentIndex = index;
 
         emit StatusUpdate(index, Status.Deployed);
     }
@@ -125,37 +117,13 @@ contract ProxyMon is SingleAuth {
     /// @notice Finds last successful deployment, then iterates `proxyImplsDiffs` to upgrade to
     ///         previous deployment.
     function rollBack() public {
+        uint256 index = lastDeploymentIndex;
+        Deployment storage lastDeployment = deployments[index];
+
         require(msg.sender == admin);
 
-        uint256 index = deploymentIndex;
-        Deployment storage deployment = deployments[index];
-
-        require(index == deployments.length - 1);
-        require(deployment.status == Status.Deployed);
-
-        uint256 lastDeployedIndex = index - 1;
-
-        while (true) {
-            if (lastDeployedIndex == 0 || deployments[lastDeployedIndex].status == Status.Deployed) {
-                break;
-            }
-
-            lastDeployedIndex -= 1;
-        }
-
-        Deployment storage lastDeployment = deployments[lastDeployedIndex];
-
-        if (lastDeployedIndex == 0) {
-            for (uint256 i; i < lastDeployment.proxyImpls.length; i++) {
-                lastDeployment.proxyImpls[i].proxy.upgrade(address(0x00));
-            }
-        } else {
-            for (uint256 i; i < lastDeployment.proxyImplsDiffs.length; i++) {
-                Proxy1967 proxy = lastDeployment.proxyImplsDiffs[i].proxy;
-                address lastImpl = lastDeployment.proxyImplsDiffs[i].Impl;
-
-                proxy.upgrade(lastImpl);
-            }
+        for (uint256 i; i < lastDeployment.proxyImpls.length; i++) {
+            lastDeployment.proxyImpls[i].proxy.rollback();
         }
 
         emit StatusUpdate(index, Status.RolledBack);

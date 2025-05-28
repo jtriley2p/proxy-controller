@@ -38,7 +38,7 @@ struct Deployment {
 ///         cancelled, executed, and/or rolled back.
 /// @dev Deployments may only be cancelled if they are queued, but not deployed.
 /// @dev Deployments may only be deployed if they are queued and the timelock as passed.
-/// @dev Deployments may only be rolled back if they are deployed.
+/// @dev Rollbacks move to the last successfully executed deployment.
 contract ProxyMon is SingleAuth {
     /// @notice Logged on status update.
     /// @param index Deployment index.
@@ -61,11 +61,7 @@ contract ProxyMon is SingleAuth {
         require(msg.sender == admin);
         require(deployments[index].status != Status.Queued);
 
-        deployments.push(
-            Deployment(
-                Status.Queued, uint64(block.timestamp + timelock), proxySalts, proxyImpls
-            )
-        );
+        deployments.push(Deployment(Status.Queued, uint64(block.timestamp + timelock), proxySalts, proxyImpls));
 
         emit StatusUpdate(index, Status.Queued);
     }
@@ -85,8 +81,8 @@ contract ProxyMon is SingleAuth {
 
     /// @notice Executes a deployment.
     /// @notice Deployment must be queued and timelock must have passed.
-    /// @notice Iterates proxy deployments (via proxySalts), iterates proxy upgrades, then updates
-    ///         deployment status and increments the deployment index.
+    /// @notice Deploys proxies, if any (via proxySalts), upgrades proxies, if any, then updates
+    ///         deployment status and sets the last deployment index.
     function deploy() public {
         uint256 index = deployments.length - 1;
         Deployment storage deployment = deployments[index];
@@ -113,9 +109,7 @@ contract ProxyMon is SingleAuth {
     }
 
     /// @notice Rolls back a deployment.
-    /// @notice If deployment is most recent, proxies are all upgraded to zero address.
-    /// @notice Finds last successful deployment, then iterates `proxyImplsDiffs` to upgrade to
-    ///         previous deployment.
+    /// @notice Calls `rollback` on each proxy from most recent deployment.
     function rollBack() public {
         uint256 index = lastDeploymentIndex;
         Deployment storage lastDeployment = deployments[index];
@@ -125,6 +119,8 @@ contract ProxyMon is SingleAuth {
         for (uint256 i; i < lastDeployment.proxyImpls.length; i++) {
             lastDeployment.proxyImpls[i].proxy.rollback();
         }
+
+        lastDeployment.status = Status.RolledBack;
 
         emit StatusUpdate(index, Status.RolledBack);
     }

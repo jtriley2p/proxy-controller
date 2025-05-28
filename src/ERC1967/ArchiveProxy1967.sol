@@ -78,7 +78,9 @@ contract ArchiveProxy1967 {
             previous = address(0x00);
         }
 
-        assembly { sstore(implSlot, previous) }
+        assembly {
+            sstore(implSlot, previous)
+        }
 
         emit RolledBack(previous);
     }
@@ -97,6 +99,8 @@ contract ArchiveProxy1967 {
 
     /// @notice Returns a storage pointer to the implementations archive.
     function getArchive() internal pure returns (address[] storage archive) {
-        assembly { archive.slot := archiveSlot }
+        assembly {
+            archive.slot := archiveSlot
+        }
     }
 }

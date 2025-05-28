@@ -33,6 +33,8 @@ contract Beacon is Administrated {
         emit ImplementationSet(newImplementation);
     }
 
+    /// @notice Rolls back implementation to previous state.
+    /// @dev If there are no previous implementations, implementation is set to zero.
     function rollBack() public {
         require(msg.sender == admin);
 

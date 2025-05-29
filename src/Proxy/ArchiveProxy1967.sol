@@ -13,9 +13,9 @@ bytes32 constant archiveSlot = 0x6d0a4a697ff0ac6a742f5fd4ef4635463f282c015f1b33b
 ///      It has been modified because the standard uses "SHOULD" instead of "MUST" and this
 ///      definition saves on gas and makes the indexing of admin transitions simpler.
 contract ArchiveProxy1967 {
-    /// @notice Logged on implementation upgrade.
+    /// @notice Logged on implementation set.
     /// @param implementation New implementation contract address.
-    event Upgraded(address indexed implementation);
+    event ImplementationSet(address indexed implementation);
 
     /// @notice Logged on implementation rollback.
     /// @param previous Previous implementation to which it rolled back.
@@ -47,9 +47,9 @@ contract ArchiveProxy1967 {
         }
     }
 
-    /// @notice Upgrades the implementation contract address.
+    /// @notice Sets the implementation contract address.
     /// @param newImplementation New implementation contract address.
-    function upgrade(address newImplementation) public {
+    function setImplementation(address newImplementation) public {
         require(msg.sender == admin());
 
         getArchive().push(newImplementation);
@@ -58,7 +58,7 @@ contract ArchiveProxy1967 {
             sstore(implSlot, newImplementation)
         }
 
-        emit Upgraded(newImplementation);
+        emit ImplementationSet(newImplementation);
     }
 
     /// @notice Rolls back implementation to its previous state.

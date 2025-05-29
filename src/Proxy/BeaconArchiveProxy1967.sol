@@ -9,11 +9,11 @@ bytes32 constant archiveSlot = 0x6d0a4a697ff0ac6a742f5fd4ef4635463f282c015f1b33b
 /// @author jtriley2p
 /// @notice Beacon contract for ERC-1967 BeaconProxy contracts to call for the implementation
 ///         address.
-contract BeaconProxy1967 {
-    /// @notice Logged on beacon change.
+contract BeaconArchiveProxy1967 {
+    /// @notice Logged on beacon set.
     /// @param beacon New beacon contract address.
     /// @dev Note that this is when the beacon itself changes, not the address it returns.
-    event BeaconUpgraded(address indexed beacon);
+    event BeaconSet(address indexed beacon);
 
     /// @notice Logged on implementation rollback.
     /// @param previous Previous implementation to which it rolled back.
@@ -45,10 +45,10 @@ contract BeaconProxy1967 {
         }
     }
 
-    /// @notice Changes beacon contract address.
+    /// @notice Sets beacon contract address.
     /// @param newBeacon New beacon contract address.
     /// @dev Note that this changes the beacon itself changes, not the address it returns.
-    function changeBeacon(address newBeacon) public {
+    function setBeacon(address newBeacon) public {
         require(msg.sender == admin());
 
         getArchive().push(newBeacon);
@@ -57,7 +57,7 @@ contract BeaconProxy1967 {
             sstore(beaconSlot, newBeacon)
         }
 
-        emit BeaconUpgraded(newBeacon);
+        emit BeaconSet(newBeacon);
     }
 
     /// @notice Rolls back beacon to its previous state.

@@ -2,6 +2,7 @@
 pragma solidity 0.8.30;
 
 import {Administrated} from "src/Auth/Administrated.sol";
+import {Administrated1967} from "src/Auth/Administrated1967.sol";
 import {ArchiveProxy1967} from "src/Proxy/ArchiveProxy1967.sol";
 import {BeaconArchiveProxy1967} from "src/Proxy/BeaconArchiveProxy1967.sol";
 
@@ -19,6 +20,14 @@ struct ProxyBeacon {
     BeaconArchiveProxy1967 proxy;
     // Beacon Address
     address beacon;
+}
+
+// Proxy-Admin Pair Structure
+struct AdminChanges {
+    // ERC1967 Proxy with Admin
+    Administrated1967 proxy;
+    // Admin Address
+    address admin;
 }
 
 // Deployment Status
@@ -43,6 +52,8 @@ struct Deployment {
     ProxyImpl[] proxyImpls;
     // Proxy beacon pairs.
     ProxyBeacon[] proxyBeacons;
+    // Proxy admin pairs.
+    AdminChanges[] adminChanges;
 }
 
 /// @title Proxy Controller Contract
@@ -73,7 +84,8 @@ contract ProxyController is Administrated {
         bytes32[] calldata proxySalts,
         bytes32[] calldata proxyBeaconSalts,
         ProxyImpl[] calldata proxyImpls,
-        ProxyBeacon[] calldata proxyBeacons
+        ProxyBeacon[] calldata proxyBeacons,
+        AdminChanges[] calldata adminChanges
     ) public {
         uint256 index = deployments.length - 1;
 
@@ -87,7 +99,8 @@ contract ProxyController is Administrated {
                 proxySalts,
                 proxyBeaconSalts,
                 proxyImpls,
-                proxyBeacons
+                proxyBeacons,
+                adminChanges
             )
         );
 
@@ -139,6 +152,13 @@ contract ProxyController is Administrated {
             address beacon = deployment.proxyBeacons[i].beacon;
 
             proxy.setBeacon(beacon);
+        }
+
+        for (uint256 i; i < deployment.adminChanges.length; i++) {
+            Administrated1967 proxy = deployment.adminChanges[i].proxy;
+            address admin = deployment.adminChanges[i].admin;
+
+            proxy.sendAdmin(admin);
         }
 
         deployment.status = Status.Deployed;

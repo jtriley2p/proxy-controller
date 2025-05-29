@@ -59,7 +59,7 @@ contract ProxyController is Administrated {
     event StatusUpdate(uint256 indexed index, Status status);
 
     /// @notice Most recent deployment index.
-    uint256 lastDeploymentIndex;
+    uint256 public lastDeploymentIndex;
 
     /// @notice Historical deployments array; facilitates rollbacks.
     Deployment[] public deployments;

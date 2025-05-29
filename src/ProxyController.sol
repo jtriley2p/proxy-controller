@@ -2,14 +2,23 @@
 pragma solidity 0.8.30;
 
 import {Administrated} from "src/Auth/Administrated.sol";
-import {ArchiveProxy1967} from "src/ERC1967/ArchiveProxy1967.sol";
+import {ArchiveProxy1967} from "src/Proxy/ArchiveProxy1967.sol";
+import {BeaconArchiveProxy1967} from "src/Proxy/BeaconArchiveProxy1967.sol";
 
 // Proxy-Implementation Pair Structure
-struct ProxyPair {
+struct ProxyImpl {
     // ERC1967 Proxy
     ArchiveProxy1967 proxy;
     // Implementation Address
     address impl;
+}
+
+// Proxy-Beacon Pair Structure
+struct ProxyBeacon {
+    // ERC1967 Beacon Proxy
+    BeaconArchiveProxy1967 proxy;
+    // Beacon Address
+    address beacon;
 }
 
 // Deployment Status
@@ -28,8 +37,12 @@ struct Deployment {
     uint64 readyAt;
     // Salts for create2 proxy deployments.
     bytes32[] proxySalts;
+    // Salts for create2 beacon proxy deployments.
+    bytes32[] beaconProxySalts;
     // Proxy implementation pairs.
-    ProxyPair[] proxyImpls;
+    ProxyImpl[] proxyImpls;
+    // Proxy beacon pairs.
+    ProxyBeacon[] proxyBeacons;
 }
 
 /// @title Proxy Controller Contract
@@ -55,13 +68,28 @@ contract ProxyController is Administrated {
     /// @param timelock Seconds before deployment can be executed.
     /// @param proxySalts Salts for create2 proxy deployments.
     /// @param proxyImpls Pairs of addresses representing the proxy and respective implementation.
-    function queue(uint64 timelock, bytes32[] calldata proxySalts, ProxyPair[] calldata proxyImpls) public {
+    function queue(
+        uint64 timelock,
+        bytes32[] calldata proxySalts,
+        bytes32[] calldata proxyBeaconSalts,
+        ProxyImpl[] calldata proxyImpls,
+        ProxyBeacon[] calldata proxyBeacons
+    ) public {
         uint256 index = deployments.length - 1;
 
         require(msg.sender == admin);
         require(deployments[index].status != Status.Queued);
 
-        deployments.push(Deployment(Status.Queued, uint64(block.timestamp + timelock), proxySalts, proxyImpls));
+        deployments.push(
+            Deployment(
+                Status.Queued,
+                uint64(block.timestamp + timelock),
+                proxySalts,
+                proxyBeaconSalts,
+                proxyImpls,
+                proxyBeacons
+            )
+        );
 
         emit StatusUpdate(index, Status.Queued);
     }
@@ -95,11 +123,22 @@ contract ProxyController is Administrated {
             new ArchiveProxy1967{salt: deployment.proxySalts[i]}();
         }
 
+        for (uint256 i; i < deployment.beaconProxySalts.length; i++) {
+            new BeaconArchiveProxy1967{salt: deployment.beaconProxySalts[i]}();
+        }
+
         for (uint256 i; i < deployment.proxyImpls.length; i++) {
             ArchiveProxy1967 proxy = deployment.proxyImpls[i].proxy;
             address impl = deployment.proxyImpls[i].impl;
 
-            proxy.upgrade(impl);
+            proxy.setImplementation(impl);
+        }
+
+        for (uint256 i; i < deployment.proxyBeacons.length; i++) {
+            BeaconArchiveProxy1967 proxy = deployment.proxyBeacons[i].proxy;
+            address beacon = deployment.proxyBeacons[i].beacon;
+
+            proxy.setBeacon(beacon);
         }
 
         deployment.status = Status.Deployed;

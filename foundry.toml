@@ -7,8 +7,8 @@ optimizer_runs = 0xffffffff
 via_ir = true
 bytecode_hash = "none"
 
-# [fmt]
-# multiline_func_header = "params_first"
-# sort_imports = true
-# line_length = 100
-# bracket_spacing = true
+[fmt]
+multiline_func_header = "params_first"
+sort_imports = true
+line_length = 100
+bracket_spacing = true

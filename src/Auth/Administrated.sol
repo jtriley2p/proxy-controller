@@ -24,7 +24,9 @@ abstract contract Administrated {
 
     /// @notice Sends admin authority.
     /// @param newAdmin New admin address.
-    function sendAdmin(address newAdmin) public {
+    function sendAdmin(
+        address newAdmin
+    ) public {
         require(msg.sender == admin);
 
         pendingAdmin = newAdmin;

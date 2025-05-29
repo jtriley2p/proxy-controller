@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.30;
 
-import {Administrated} from "src/Auth/Administrated.sol";
-import {Administrated1967} from "src/Auth/Administrated1967.sol";
-import {ArchiveProxy1967} from "src/Proxy/ArchiveProxy1967.sol";
-import {BeaconArchiveProxy1967} from "src/Proxy/BeaconArchiveProxy1967.sol";
+import { Administrated } from "src/Auth/Administrated.sol";
+import { Administrated1967 } from "src/Auth/Administrated1967.sol";
+import { ArchiveProxy1967 } from "src/Proxy/ArchiveProxy1967.sol";
+import { BeaconArchiveProxy1967 } from "src/Proxy/BeaconArchiveProxy1967.sol";
 
 // Proxy-Implementation Pair Structure
 struct ProxyImpl {
@@ -133,11 +133,11 @@ contract ProxyController is Administrated {
         require(deployment.readyAt <= block.timestamp);
 
         for (uint256 i; i < deployment.proxySalts.length; i++) {
-            new ArchiveProxy1967{salt: deployment.proxySalts[i]}();
+            new ArchiveProxy1967{ salt: deployment.proxySalts[i] }();
         }
 
         for (uint256 i; i < deployment.beaconProxySalts.length; i++) {
-            new BeaconArchiveProxy1967{salt: deployment.beaconProxySalts[i]}();
+            new BeaconArchiveProxy1967{ salt: deployment.beaconProxySalts[i] }();
         }
 
         for (uint256 i; i < deployment.proxyImpls.length; i++) {

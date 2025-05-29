@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.30;
 
-import { Administrated1967, adminSlot } from "src/Auth/Administrated1967.sol";
+import {Administrated1967, adminSlot} from "src/Auth/Administrated1967.sol";
 
 bytes32 constant beaconSlot = 0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50;
 bytes32 constant archiveSlot = 0x6d0a4a697ff0ac6a742f5fd4ef4635463f282c015f1b33be5ff5077e69199088;

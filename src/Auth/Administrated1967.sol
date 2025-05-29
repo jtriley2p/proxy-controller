@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.30;
 
-
 bytes32 constant adminSlot = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 bytes32 constant pendingAdminSlot = 0x8b2bdfe1250d0e6b0c2034608336566041b2cfc76c628c23f12b93744b938494;
 

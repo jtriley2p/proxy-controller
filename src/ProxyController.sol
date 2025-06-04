@@ -5,6 +5,7 @@ import { Administrated } from "src/Auth/Administrated.sol";
 import { Administrated1967 } from "src/Auth/Administrated1967.sol";
 import { ArchiveProxy1967 } from "src/Proxy/ArchiveProxy1967.sol";
 import { BeaconArchiveProxy1967 } from "src/Proxy/BeaconArchiveProxy1967.sol";
+import { PostDeployment } from "src/Checks/PostDeployment.sol";
 
 // Proxy-Implementation Pair Structure
 struct ProxyImpl {
@@ -54,6 +55,8 @@ struct Deployment {
     ProxyBeacon[] proxyBeacons;
     // Proxy admin pairs.
     AdminChanges[] adminChanges;
+    // Post-deployment check
+    PostDeployment postDeployment;
 }
 
 /// @title Proxy Controller Contract
@@ -78,14 +81,20 @@ contract ProxyController is Administrated {
     /// @notice Queues a new deployment. There MUST NOT be any currently queued deployments.
     /// @param timelock Seconds before deployment can be executed.
     /// @param proxySalts Salts for create2 proxy deployments.
+    /// @param proxyBeaconSalts Salts for create2 proxy beacon deployments.
     /// @param proxyImpls Pairs of addresses representing the proxy and respective implementation.
+    /// @param proxyBeacons Pairs of addresses representing the proxy and respective beacon.
+    /// @param adminChanges Pairs of addresses representing the proxy and respective admin.
+    /// @param postDeployment Optional post-deployment contract to run checks on the protocol deployment.
+    /// @dev postDeployment may be left as the zero address if no post-deployment checks are necessary.
     function queue(
         uint64 timelock,
         bytes32[] calldata proxySalts,
         bytes32[] calldata proxyBeaconSalts,
         ProxyImpl[] calldata proxyImpls,
         ProxyBeacon[] calldata proxyBeacons,
-        AdminChanges[] calldata adminChanges
+        AdminChanges[] calldata adminChanges,
+        PostDeployment postDeployment
     ) public {
         uint256 index = deployments.length - 1;
 
@@ -100,7 +109,8 @@ contract ProxyController is Administrated {
                 proxyBeaconSalts,
                 proxyImpls,
                 proxyBeacons,
-                adminChanges
+                adminChanges,
+                postDeployment
             )
         );
 
@@ -159,6 +169,10 @@ contract ProxyController is Administrated {
             address admin = deployment.adminChanges[i].admin;
 
             proxy.sendAdmin(admin);
+        }
+
+        if (address(deployment.postDeployment) != address(0x00)) {
+            require(deployment.postDeployment.check());
         }
 
         deployment.status = Status.Deployed;

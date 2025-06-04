@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.30;
 
-import {Administrated1967} from "src/Auth/Administrated1967.sol";
+import { Administrated1967 } from "src/Auth/Administrated1967.sol";
 
 /// @title Recovery Implementation
 /// @author jtriley2p
@@ -31,7 +31,7 @@ contract Recovery is Administrated1967 {
         require(len == values.length && len == payloads.length);
 
         for (uint256 i; i < len; i++) {
-            (bool success,) = targets[i].call{value: values[i]}(payloads[i]);
+            (bool success,) = targets[i].call{ value: values[i] }(payloads[i]);
             ok = ok && success;
         }
 

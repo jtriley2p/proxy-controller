@@ -3,9 +3,10 @@ pragma solidity 0.8.30;
 
 import { Administrated } from "src/Auth/Administrated.sol";
 import { Administrated1967 } from "src/Auth/Administrated1967.sol";
+
+import { PostDeployment } from "src/Checks/PostDeployment.sol";
 import { ArchiveProxy1967 } from "src/Proxy/ArchiveProxy1967.sol";
 import { BeaconArchiveProxy1967 } from "src/Proxy/BeaconArchiveProxy1967.sol";
-import { PostDeployment } from "src/Checks/PostDeployment.sol";
 
 // Proxy-Implementation Pair Structure
 struct ProxyImpl {
